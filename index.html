@@ -96,8 +96,18 @@ td.n{font-family:var(--M);text-align:right;font-size:11px}td.cn{max-width:200px;
 .tab-panel{display:none}.tab-panel.active{display:block}
 /* Creative cards */
 .cr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
-.cr-card{background:#fff;border:1px solid #e5e9f0;border-radius:10px;overflow:hidden;transition:box-shadow .15s,transform .15s}
+.cr-card{background:#fff;border:1px solid #e5e9f0;border-radius:10px;overflow:hidden;transition:box-shadow .15s,transform .15s;display:flex;flex-direction:column}
 .cr-card:hover{box-shadow:0 4px 16px rgba(29,78,216,.08);transform:translateY(-1px)}
+.cr-thumb{position:relative;width:100%;aspect-ratio:1/1;background:#f1f5f9;overflow:hidden;border-bottom:1px solid #e5e9f0}
+.cr-thumb img{width:100%;height:100%;object-fit:cover;display:block;background:#f1f5f9}
+.cr-thumb-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;padding:18px;text-align:center}
+.cr-thumb-ph .ph-icon{font-size:32px;font-weight:700;font-family:var(--M);opacity:.9;letter-spacing:-1px}
+.cr-thumb-ph .ph-label{font-size:10px;font-weight:600;opacity:.85;letter-spacing:1.2px;text-transform:uppercase}
+.cr-thumb-ph .ph-name{font-size:12px;font-weight:700;line-height:1.3;max-height:48px;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.15)}
+.cr-thumb-type{position:absolute;top:8px;left:8px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:.6px;text-transform:uppercase;color:#fff;backdrop-filter:blur(8px);background:rgba(10,15,26,.55)}
+.cr-thumb-rank{position:absolute;top:8px;right:8px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;font-family:var(--M);color:#fff;background:rgba(10,15,26,.55);backdrop-filter:blur(8px)}
+.cr-thumb-view{position:absolute;bottom:8px;right:8px;font-size:10px;font-weight:700;padding:4px 10px;border-radius:5px;color:#fff;background:rgba(29,78,216,.92);text-decoration:none;display:inline-flex;align-items:center;gap:4px;backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,.25);opacity:0;transition:opacity .15s}
+.cr-card:hover .cr-thumb-view{opacity:1}
 .cr-top{padding:14px 16px;border-bottom:1px solid #f1f5f9}
 .cr-badge{display:inline-flex;align-items:center;gap:6px;margin-bottom:8px}
 .cr-name{font-size:14px;font-weight:700;color:#0a0f1a;line-height:1.3;margin-bottom:4px}
@@ -175,7 +185,7 @@ td.n{font-family:var(--M);text-align:right;font-size:11px}td.cn{max-width:200px;
 
 <!-- TAB 2: CREATIVES -->
 <div class="tab-panel" id="tab-creatives">
-<div class="SL">Creative Performance <span style="font-weight:400;font-size:9px;color:var(--ac);margin-left:6px">Click "View Creative" to see the actual ad on Instagram</span></div>
+<div class="SL">Creative Performance <span style="font-weight:400;font-size:9px;color:var(--ac);margin-left:6px">Hover a card or click "View Creative" to see the ad on Instagram</span></div>
 <div class="cr-sort" id="crSort"></div>
 <div class="cr-grid" id="crGrid"></div>
 </div>
@@ -696,13 +706,22 @@ function renderCreatives(){
     const res=ad.res;const cpr=res>0?Math.round(ad.s/res):null;
     const cprCls=cpr?cpr<350?'cg':cpr<600?'cy2':'cr':'cx';
     const hasIG=cr.ig&&cr.ig.length>10;
-    const ctr=ad.k>0&&ad.s>0?'â€”':'â€”'; // We dont have impressions per ad readily
-    
+    const igCode=hasIG?(cr.ig.match(/instagram\.com\/p\/([A-Za-z0-9_-]+)/)||[])[1]:null;
+    const phGrad=type==='Carousel'?'linear-gradient(135deg,#f59e0b 0%,#b45309 100%)':type==='Video'?'linear-gradient(135deg,#8b5cf6 0%,#6d28d9 100%)':'linear-gradient(135deg,#3b82f6 0%,#1d4ed8 100%)';
+    const phIcon=type==='Carousel'?'\u25A3':type==='Video'?'\u25B6':'\u25A0';
+    const thumbInner=igCode
+      ?`<img src="thumbnails/${igCode}.jpg" alt="${ad.n.replace(/"/g,'&quot;')}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cr-thumb-ph" style="background:${phGrad};display:none"><div class="ph-icon">${phIcon}</div><div class="ph-label">${type}</div><div class="ph-name">${ad.n}</div></div>`
+      :`<div class="cr-thumb-ph" style="background:${phGrad}"><div class="ph-icon">${phIcon}</div><div class="ph-label">${type}</div><div class="ph-name">${ad.n}</div></div>`;
+
     h+=`<div class="cr-card" style="border-top:3px solid ${col}">
+      <div class="cr-thumb">
+        ${thumbInner}
+        <span class="cr-thumb-type">${type}</span>
+        <span class="cr-thumb-rank">#${i+1}</span>
+        ${hasIG?`<a href="${cr.ig}" target="_blank" rel="noopener" class="cr-thumb-view">View on IG \u2197</a>`:''}
+      </div>
       <div class="cr-top">
         <div class="cr-badge">
-          <span class="tag ${type==='Carousel'?'tag-c':type==='Video'?'tag-v':'tag-s'}">${type}</span>
-          <span style="font-size:9px;color:#9ca3af;font-family:var(--M)">#${i+1}</span>
           ${ad.f>=1.4?'<span style="font-size:8px;background:#fef2f2;color:#dc2626;padding:1px 5px;border-radius:3px;font-weight:700">FATIGUE</span>':''}
           ${res>3&&cpr&&cpr<400?'<span style="font-size:8px;background:#f0fdf4;color:#059669;padding:1px 5px;border-radius:3px;font-weight:700">TOP PERFORMER</span>':''}
         </div>
